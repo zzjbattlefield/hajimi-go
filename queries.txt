@@ -1,0 +1,25 @@
+AIzaSy filename:.env
+AIzaSy filename:.env.local
+AIzaSy filename:.env.development
+AIzaSy filename:.env.example
+AIzaSy filename:config extension:json
+AIzaSy filename:config extension:yml
+AIzaSy filename:config extension:yaml
+AIzaSy filename:credentials
+AIzaSy filename:credential
+AIzaSy filename:secrets
+AIzaSy extension:toml
+AIzaSy extension:ini
+AIzaSy extension:xml
+AIzaSy extension:properties
+AIzaSy filename:docker-compose.yml
+AIzaSy path:.circleci filename:config.yml
+AIzaSy path:.github/workflows
+AIzaSy path:config
+AIzaSy path:conf
+AIzaSy path:etc
+AIzaSy path:.aws
+AIzaSy path:.gcp
+AIzaSy path:.azure
+"AIzaSy "API_KEY" path:config extension:py -path:tests
+AIzaSy in:file

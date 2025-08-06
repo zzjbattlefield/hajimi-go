@@ -1,0 +1,35 @@
+# Binaries
+hajimi-go
+hajimi-go-*
+
+# Environment files
+.env
+!.env.example
+
+# IDE files
+.vscode/
+.idea/
+.roo/
+
+# macOS files
+.DS_Store
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go test binary
+go.test
+
+# Coverage output
+coverage.txt
+coverage.html
+
+# Log files
+*.log
+
+# Data directory
+/data/
