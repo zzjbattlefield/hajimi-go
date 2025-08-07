@@ -19,13 +19,6 @@ type Client struct {
 
 // NewClient 创建一个新的 GitHub 客户端，支持令牌轮换
 func NewClient(tokens []string) *Client {
-	if len(tokens) == 0 {
-		return &Client{
-			Client: github.NewClient(nil),
-			tokens: tokens,
-		}
-	}
-
 	return &Client{
 		Client:   github.NewClient(nil).WithAuthToken(tokens[0]),
 		tokens:   tokens,

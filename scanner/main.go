@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/google/go-github/v74/github"
 	"github.com/zzjbattlefield/hajimi-go/internal/checkpoint"
@@ -17,8 +16,6 @@ import (
 	"github.com/zzjbattlefield/hajimi-go/internal/logger"
 	"github.com/zzjbattlefield/hajimi-go/internal/validator"
 )
-
-var saveFile *os.File
 
 func main() {
 	configFile := flag.String("config", ".env", "配置文件路径")
@@ -135,18 +132,18 @@ func processCodeResults(ctx context.Context, codeResults []*github.CodeResult, s
 
 		// 验证并记录找到的密钥
 		for _, secret := range secrets {
+			//判断密钥是否已经存在
+			if data.CacheData.Check(secret.Value) {
+				continue
+			}
 			// 将密钥类型转换为 validator.SecretType
 			secretType := validator.SecretType(secret.Type)
 			// 验证密钥
 			validationResult, err := secretValidator.Validate(ctx, secretType, secret.Value)
 			if err != nil {
 				logger.Log.Errorf("验证密钥失败 - 类型: %s, 值: %s, ", secret.Type, secret.Value)
-				// 即使验证失败也记录密钥
-				logger.Log.Infof("找到密钥 - 类型: %s, 值: %s, 文件: %s, 仓库: %s, 行: %d",
-					secret.Type, secret.Value, secret.File, secret.Repo, secret.Line)
 				continue
 			}
-
 			// 记录验证结果
 			if validationResult.Valid {
 				logger.Log.Infof("找到有效密钥 - 类型: %s, 值: %s, 文件: %s, 仓库: %s, 行: %d, 详情: %s",
@@ -172,9 +169,6 @@ func processCodeResults(ctx context.Context, codeResults []*github.CodeResult, s
 
 			logger.Log.Infof("已处理 %d 个文件，保存检查点", *processed)
 		}
-
-		// 添加小延迟以避免速率限制
-		time.Sleep(100 * time.Millisecond)
 	}
 
 	return nil
@@ -203,56 +197,56 @@ func scanGitHub(client *githubclient.Client, secretValidator validator.Validator
 		}
 		processed := cp.Processed
 		logger.Log.Infof("开始使用查询: %s 进行扫描", query)
-		// 搜索代码
+
+		// 搜索代码（包括第一页和后续分页）
 		var result *github.CodeSearchResult
 		var resp *github.Response
 		var err error
-		retry := 0
-		for retry < 3 {
-			if result, resp, err = client.SearchCode(ctx, query, opts); err != nil {
-				logger.Log.Errorf("搜索代码失败,尝试更换令牌重试: %v", err)
-				client.RotateToken()
-				retry++
-			} else {
-				break
+
+		// 使用循环处理所有页面，包括第一页和后续分页
+		for {
+			// 如果 resp 为 nil，说明是第一次搜索
+			// 如果 resp.NextPage > 0，说明有下一页需要处理
+			if resp != nil && resp.NextPage > 0 {
+				opts.Page = resp.NextPage
+				logger.Log.Infof("处理第 %d 页", opts.Page)
 			}
-		}
-		// 如果我们是从头开始则更新总结果数
-		if result.Total != nil && cp.TotalResults != *result.Total {
-			cp.TotalResults = *result.Total
-			logger.Log.Infof("找到 %d 个代码结果", *result.Total)
-		}
 
-		// 处理结果
-		if err := processCodeResults(ctx, result.CodeResults, secretValidator, checkpointManager, query, opts.Page, cp.TotalResults, &processed, cp); err != nil {
-			return err
-		}
-
-		// 处理分页
-		for resp != nil && resp.NextPage > 0 {
-			logger.Log.Infof("处理第 %d 页", resp.NextPage)
-
-			// 更新下一页的选项
-			opts.Page = resp.NextPage
-
-			// 搜索下一页
-			result, resp, err = client.SearchCode(ctx, query, opts)
-			if err != nil {
-				// 尝试轮换令牌并重试一次
-				client.RotateToken()
-				result, resp, err = client.SearchCode(ctx, query, opts)
-				if err != nil {
-					// 在返回错误前保存检查点
-					if saveErr := checkpointManager.Save(); saveErr != nil {
-						logger.Log.Errorf("在错误时保存检查点失败: %v", saveErr)
-					}
-					return fmt.Errorf("搜索代码失败: %w", err)
+			// 执行搜索，带重试机制
+			retry := 0
+			for retry < 3 {
+				if result, resp, err = client.SearchCode(ctx, query, opts); err != nil {
+					logger.Log.Errorf("搜索代码失败,尝试更换令牌重试: %v", err)
+					client.RotateToken()
+					retry++
+				} else {
+					break
 				}
 			}
 
-			// 处理下一页的结果
+			// 如果搜索失败，返回错误
+			if err != nil {
+				// 在返回错误前保存检查点
+				if saveErr := checkpointManager.Save(); saveErr != nil {
+					logger.Log.Errorf("在错误时保存检查点失败: %v", saveErr)
+				}
+				return fmt.Errorf("搜索代码失败: %w", err)
+			}
+
+			// 如果我们是从头开始则更新总结果数
+			if result.Total != nil && cp.TotalResults != *result.Total {
+				cp.TotalResults = *result.Total
+				logger.Log.Infof("找到 %d 个代码结果", *result.Total)
+			}
+
+			// 处理结果
 			if err := processCodeResults(ctx, result.CodeResults, secretValidator, checkpointManager, query, opts.Page, cp.TotalResults, &processed, cp); err != nil {
 				return err
+			}
+
+			// 如果没有下一页，退出循环
+			if resp == nil || resp.NextPage <= 0 {
+				break
 			}
 		}
 

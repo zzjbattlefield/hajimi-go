@@ -21,5 +21,4 @@ AIzaSy path:etc
 AIzaSy path:.aws
 AIzaSy path:.gcp
 AIzaSy path:.azure
-"AIzaSy "API_KEY" path:config extension:py -path:tests
 AIzaSy in:file
