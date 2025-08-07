@@ -25,7 +25,7 @@ type SyncManager struct {
 	ctx        context.Context
 	cancel     context.CancelFunc
 	wg         sync.WaitGroup
-	mu         sync.RWMutex
+	rw         sync.RWMutex
 
 	// 配置
 	batchSize     int

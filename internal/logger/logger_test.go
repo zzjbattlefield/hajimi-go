@@ -9,7 +9,7 @@ import (
 
 func TestNewLogger(t *testing.T) {
 	// Test creating a new logger
-	logger := New()
+	logger := Log
 	if logger == nil {
 		t.Error("Expected a logger, got nil")
 	}

@@ -110,20 +110,15 @@ func (c *Client) WithToken(token string) *Client {
 }
 
 // RotateToken 轮换到列表中的下一个令牌
-func (c *Client) RotateToken() *Client {
+func (c *Client) RotateToken() bool {
 	if len(c.tokens) <= 1 {
-		return c
+		return false
 	}
 
 	// 移动到下一个令牌
 	c.tokenIdx = (c.tokenIdx + 1) % len(c.tokens)
-
-	// 使用新令牌
-	return &Client{
-		Client:   github.NewClient(nil).WithAuthToken(c.tokens[c.tokenIdx]),
-		tokens:   c.tokens,
-		tokenIdx: c.tokenIdx,
-	}
+	c.Client = github.NewClient(nil).WithAuthToken(c.tokens[c.tokenIdx])
+	return true
 }
 
 // SetHTTPClient 设置自定义 HTTP 客户端

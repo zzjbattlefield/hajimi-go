@@ -4,6 +4,8 @@ import (
 	"regexp"
 )
 
+var SecretExtractor *Extractor
+
 // Secret 表示提取出的密钥
 type Secret struct {
 	Type   string `json:"type"`
@@ -20,13 +22,13 @@ type Extractor struct {
 }
 
 // NewExtractor 创建一个新的提取器，包含预定义的模式
-func NewExtractor() *Extractor {
+func NewExtractor() {
 	patterns := map[string]*regexp.Regexp{
 		// Google API Key
 		"google_api_key": regexp.MustCompile(`AIzaSy[A-Za-z0-9\-_]{33}`),
 	}
 
-	return &Extractor{
+	SecretExtractor = &Extractor{
 		patterns: patterns,
 	}
 }

@@ -3,18 +3,23 @@ package logger
 import (
 	"log"
 	"os"
+	"sync"
 )
+
+var Log *Logger
+var once sync.Once
 
 // Logger 封装了标准日志记录器
 type Logger struct {
 	*log.Logger
 }
 
-// New 创建一个新的日志记录器实例
-func New() *Logger {
-	return &Logger{
-		Logger: log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile),
-	}
+func init() {
+	once.Do(func() {
+		Log = &Logger{
+			Logger: log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile),
+		}
+	})
 }
 
 // Info 记录信息消息

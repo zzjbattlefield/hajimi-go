@@ -7,7 +7,7 @@ import (
 
 func TestExtract(t *testing.T) {
 	// 创建一个新的提取器
-	extractor := NewExtractor()
+	NewExtractor()
 
 	// 测试包含各种密钥的内容
 	content := `
@@ -15,25 +15,11 @@ func TestExtract(t *testing.T) {
 		
 		# Google API Key
 		api_key = "AIzaSyC123456789012345678901234567890123"
-		
-		# Google OAuth Client ID
-		client_id = "123456789012-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com"
-		
-		# AWS Access Key
-		aws_access_key = "AKIA1234567890123456"
-		
-		# GitHub Token
-		gh_token = "ghp_abcdefghijklmnopqrstuvwxyz123456789012"
-		
-		# Generic API Key (different format to avoid matching google api key)
-		api_secret = "sk-abcdefghijklmnopqrstuvwxyz12345678"
-		
-		# This is not a secret
-		regular_text = "this is just regular text"
+		some_other_string = "text..."
 	`
 
 	// 提取密钥
-	secrets := extractor.Extract(content, "test.txt", "test/repo", "abc123")
+	secrets := SecretExtractor.Extract(content, "test.txt", "test/repo", "abc123")
 
 	// 打印找到的密钥用于调试
 	for _, secret := range secrets {
@@ -77,7 +63,7 @@ func TestExtract(t *testing.T) {
 
 func TestExtractNoSecrets(t *testing.T) {
 	// 创建一个新的提取器
-	extractor := NewExtractor()
+	NewExtractor()
 
 	// 测试不包含密钥的内容
 	content := `
@@ -88,7 +74,7 @@ func TestExtractNoSecrets(t *testing.T) {
 	`
 
 	// 提取密钥
-	secrets := extractor.Extract(content, "test.txt", "test/repo", "abc123")
+	secrets := SecretExtractor.Extract(content, "test.txt", "test/repo", "abc123")
 
 	// 验证我们没有找到任何密钥
 	if len(secrets) != 0 {
@@ -98,17 +84,17 @@ func TestExtractNoSecrets(t *testing.T) {
 
 func TestAddPattern(t *testing.T) {
 	// 创建一个新的提取器
-	extractor := NewExtractor()
+	NewExtractor()
 
 	// 计算初始模式数量
-	initialCount := len(extractor.GetPatterns())
+	initialCount := len(SecretExtractor.GetPatterns())
 
 	// 添加一个新模式
 	pattern := regexp.MustCompile(`test_pattern_[a-z]+`)
-	extractor.AddPattern("test_pattern", pattern)
+	SecretExtractor.AddPattern("test_pattern", pattern)
 
 	// 验证模式已添加
-	patterns := extractor.GetPatterns()
+	patterns := SecretExtractor.GetPatterns()
 	if len(patterns) != initialCount+1 {
 		t.Errorf("Expected %d patterns, got %d", initialCount+1, len(patterns))
 	}

@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewSyncManager(t *testing.T) {
-	logger := logger.New()
+	logger := logger.Log
 
 	sm := NewSyncManager(logger, 10, 30*time.Second, 3)
 
@@ -31,7 +31,7 @@ func TestNewSyncManager(t *testing.T) {
 }
 
 func TestAddToQueue(t *testing.T) {
-	logger := logger.New()
+	logger := logger.Log
 	sm := NewSyncManager(logger, 10, 30*time.Second, 3)
 
 	secret := extractor.Secret{
@@ -64,7 +64,7 @@ func TestAddToQueue(t *testing.T) {
 }
 
 func TestGetQueueLength(t *testing.T) {
-	logger := logger.New()
+	logger := logger.Log
 	sm := NewSyncManager(logger, 10, 30*time.Second, 3)
 
 	// Check initial queue length
@@ -91,7 +91,7 @@ func TestGetQueueLength(t *testing.T) {
 }
 
 func TestGetBatchQueueLength(t *testing.T) {
-	logger := logger.New()
+	logger := logger.Log
 	sm := NewSyncManager(logger, 10, 30*time.Second, 3)
 
 	// Check initial batch queue length
@@ -124,7 +124,7 @@ func TestGetBatchQueueLength(t *testing.T) {
 }
 
 func TestProcessBatch(t *testing.T) {
-	logger := logger.New()
+	logger := logger.Log
 	sm := NewSyncManager(logger, 10, 30*time.Second, 3)
 
 	// Create a batch of items
@@ -165,7 +165,7 @@ func TestProcessBatch(t *testing.T) {
 }
 
 func TestProcessBatchWithRetries(t *testing.T) {
-	logger := logger.New()
+	logger := logger.Log
 	sm := NewSyncManager(logger, 10, 30*time.Second, 3)
 
 	// Create a batch of items, including one that will fail on first attempt

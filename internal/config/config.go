@@ -2,17 +2,23 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/joho/godotenv"
+	"github.com/zzjbattlefield/hajimi-go/internal/logger"
 )
+
+var Conf *Config
 
 // Config 存储应用程序的配置信息
 type Config struct {
 	GithubTokens  []string
 	Proxy         string
 	DataPath      string
+	SaveFileName  string
 	DateRangeDays int
 	QueriesFile   string
 
@@ -23,15 +29,24 @@ type Config struct {
 	SyncMaxRetries    int
 }
 
+var once sync.Once
+
+func init() {
+	once.Do(func() {
+		Conf = Load()
+	})
+}
+
 // Load 从环境变量中加载配置
-func Load() (*Config, error) {
+func Load() *Config {
 	// 如果存在 .env 文件则加载它
 	_ = godotenv.Load()
 
 	cfg := &Config{
 		GithubTokens:      getEnvAsSlice("GITHUB_TOKENS", []string{}),
 		Proxy:             getEnv("PROXY", ""),
-		DataPath:          getEnv("DATA_PATH", "/app/data"),
+		SaveFileName:      getEnv("SAVE_FILE_NAME", "valid_keys.txt"),
+		DataPath:          getEnv("DATA_PATH", getDefaultDataPath()),
 		DateRangeDays:     getEnvAsInt("DATE_RANGE_DAYS", 730),
 		QueriesFile:       getEnv("QUERIES_FILE", "queries.txt"),
 		SyncEnabled:       getEnvAsBool("SYNC_ENABLED", false),
@@ -40,7 +55,7 @@ func Load() (*Config, error) {
 		SyncMaxRetries:    getEnvAsInt("SYNC_MAX_RETRIES", 3),
 	}
 
-	return cfg, nil
+	return cfg
 }
 
 // 辅助函数
@@ -72,4 +87,14 @@ func getEnvAsInt(name string, defaultVal int) int {
 		return val
 	}
 	return defaultVal
+}
+
+func getDefaultDataPath() string {
+	exePath, err := os.Executable()
+	if err != nil {
+		logger.Log.Errorf("获取可执行文件路径失败: %v", err)
+		return "/app/data"
+	}
+	exeDir := filepath.Dir(exePath)
+	return filepath.Join(exeDir, "data")
 }
