@@ -16,8 +16,13 @@ type Logger struct {
 
 func init() {
 	once.Do(func() {
+		var file *os.File
+		var err error
+		if file, err = os.OpenFile("/app/logs/hajimi.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666); err != nil {
+			file = os.Stdout
+		}
 		Log = &Logger{
-			Logger: log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile),
+			Logger: log.New(file, "", log.LstdFlags|log.Lshortfile),
 		}
 	})
 }

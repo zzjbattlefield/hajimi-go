@@ -21,6 +21,7 @@ type Config struct {
 	SaveFileName  string
 	DateRangeDays int
 	QueriesFile   string
+	LOGFILEPATH   string
 
 	// 同步配置
 	SyncEnabled       bool
@@ -45,6 +46,7 @@ func Load() *Config {
 	cfg := &Config{
 		GithubTokens:      getEnvAsSlice("GITHUB_TOKENS", []string{}),
 		Proxy:             getEnv("PROXY", ""),
+		LOGFILEPATH:       getEnv("LOGFILE_PATH", ""),
 		SaveFileName:      getEnv("SAVE_FILE_NAME", "valid_keys.txt"),
 		DataPath:          getEnv("DATA_PATH", getDefaultDataPath()),
 		DateRangeDays:     getEnvAsInt("DATE_RANGE_DAYS", 730),

@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+  hajimi-go:
+    image: mrzzj/hajimi-go:latest
+    volumes:
+      - ./data:/app/data
+      - ./.env:/app/.env
+      - ./queries.txt:/app/queries.txt
+      - ./logs/:/app/logs
+    container_name: hajimi-go

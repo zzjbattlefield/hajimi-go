@@ -101,7 +101,7 @@ func init() {
 func (c *Cache) Add(secret string) {
 	c.rw.Lock()
 	defer c.rw.Unlock()
-	if exists := c.Check(secret); !exists {
+	if _, exists := c.data[secret]; !exists {
 		c.data[secret] = struct{}{}
 		saveFile.WriteString(secret + "\n")
 	}

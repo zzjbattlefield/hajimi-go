@@ -134,6 +134,7 @@ func processCodeResults(ctx context.Context, codeResults []*github.CodeResult, s
 		for _, secret := range secrets {
 			//判断密钥是否已经存在
 			if data.CacheData.Check(secret.Value) {
+				logger.Log.Infof("跳过已存在的密钥: %s", secret.Value)
 				continue
 			}
 			// 将密钥类型转换为 validator.SecretType
