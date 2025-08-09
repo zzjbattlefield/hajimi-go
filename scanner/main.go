@@ -54,19 +54,9 @@ func main() {
 	if err := os.MkdirAll("data", 0755); err != nil {
 		panic(fmt.Errorf("创建数据目录失败: %w", err))
 	}
-	// 设置默认查询字符串
-	var querys = []string{"AIzaSy in:file"}
-	if config.Conf.QueriesFile != "" {
-		// 从文件读取查询
-		content, err := os.ReadFile(config.Conf.QueriesFile)
-		if err != nil {
-			logger.Errorf("读取查询文件失败: %v", err)
-		}
-		querys = strings.Split(string(content), "\n")
-	}
 
 	// 初始化检查点管理器
-	checkpointManager := checkpoint.NewManager(config.Conf.DataPath, querys)
+	checkpointManager := checkpoint.NewManager()
 	// 确保在退出时保存检查点
 	defer func() {
 		data.CacheData.Close()
@@ -74,7 +64,7 @@ func main() {
 			logger.Errorf("保存检查点失败: %v", err)
 		}
 	}()
-	err := scanGitHub(client, secretValidator, checkpointManager, querys)
+	err := scanGitHub(client, secretValidator, checkpointManager)
 	if err != nil {
 		logger.Errorf("扫描失败: %v", err)
 		// 在错误时保存检查点
@@ -88,7 +78,7 @@ func main() {
 }
 
 // processCodeResults 处理一批代码搜索结果
-func processCodeResults(ctx context.Context, codeResults []*github.CodeResult, secretValidator validator.Validator, checkpointManager *checkpoint.Manager, query string, page int, totalResults int, processed *int, cp *checkpoint.Checkpoint) error {
+func processCodeResults(ctx context.Context, codeResults []*github.CodeResult, secretValidator validator.Validator, checkpointManager *checkpoint.Manager, query checkpoint.Query, page int, totalResults int, processed *int, cp *checkpoint.Checkpoint) error {
 	for _, codeResult := range codeResults {
 		// 提取仓库和文件信息
 		repoName := ""
@@ -175,10 +165,10 @@ func processCodeResults(ctx context.Context, codeResults []*github.CodeResult, s
 	return nil
 }
 
-func scanGitHub(client *githubclient.Client, secretValidator validator.Validator, checkpointManager *checkpoint.Manager, querys []string) error {
+func scanGitHub(client *githubclient.Client, secretValidator validator.Validator, checkpointManager *checkpoint.Manager) error {
 	ctx := context.Background()
-
-	for _, query := range querys {
+	for checkpointManager.QueryNext() {
+		query := checkpointManager.Query()
 		// 获取检查点
 		cp := checkpointManager.GetCheckpoint(query)
 

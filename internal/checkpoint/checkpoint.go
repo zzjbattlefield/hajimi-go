@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/zzjbattlefield/hajimi-go/internal/config"
 )
 
 // Checkpoint 结构体定义了扫描过程中的状态快照。
@@ -15,7 +17,7 @@ import (
 type Checkpoint struct {
 	// Query 是当前正在处理的GitHub搜索查询语句。
 	// 这个字段记录了扫描任务所使用的具体查询条件。
-	Query string `json:"query"`
+	Query Query `json:"query"`
 
 	// LastPage 是上次成功获取并处理完的搜索结果的页码。
 	// GitHub API 的搜索结果是分页的，这个字段帮助我们从下一页继续。
@@ -53,23 +55,29 @@ type Manager struct {
 	dataPath    string
 	checkpoints checkpoints
 	mu          sync.RWMutex
+	querys      []Query
+	queryIndex  int
 }
 
-type checkpoints map[string]*Checkpoint
+type checkpoints map[Query]*Checkpoint
 
 // NewManager 创建并返回一个新的检查点管理器（Manager）实例。
 // 它需要一个配置对象（*config.Config）作为参数，该配置对象应包含
 // 检查点文件的存储路径等信息。
-func NewManager(dataPath string, querys []string) *Manager {
+func NewManager() *Manager {
+	dataPath := config.Conf.DataPath
+	querys := ReadQueryFile(config.Conf.QueriesFile)
 	manager := &Manager{
-		dataPath: dataPath,
+		dataPath:   dataPath,
+		querys:     querys,
+		queryIndex: -1,
 	}
 	manager.load(querys)
 	return manager
 }
 
-func newCheckpoints(querys []string) checkpoints {
-	checkpoints := make(map[string]*Checkpoint, len(querys))
+func newCheckpoints(querys []Query) checkpoints {
+	checkpoints := make(checkpoints, len(querys))
 	for _, query := range querys {
 		checkpoints[query] = &Checkpoint{
 			Query: query,
@@ -78,10 +86,26 @@ func newCheckpoints(querys []string) checkpoints {
 	return checkpoints
 }
 
+func (m *Manager) QueryNext() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.queryIndex++
+	return m.queryIndex < len(m.querys)
+}
+
+func (m *Manager) Query() Query {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if m.queryIndex < 0 || m.queryIndex >= len(m.querys) {
+		return ""
+	}
+	return m.querys[m.queryIndex]
+}
+
 // load 方法从文件中加载检查点状态。
 // 如果检查点文件（默认为 "checkpoint.json"）不存在，它会初始化一个新的、空的检查点。
 // 这个方法通常在扫描任务开始时调用，用于恢复之前的进度或从头开始。
-func (m *Manager) load(querys []string) {
+func (m *Manager) load(querys []Query) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -98,22 +122,25 @@ func (m *Manager) load(querys []string) {
 		panic(fmt.Errorf("读取检查点文件失败: %w", err))
 	}
 
-	var checkpoints checkpoints
-	if err := json.Unmarshal(data, &checkpoints); err != nil {
+	var checkpointsData checkpoints
+	newCheckpoints := make(checkpoints)
+	if err := json.Unmarshal(data, &checkpointsData); err != nil {
 		// 如果JSON解析失败，可能意味着文件已损坏。
 		panic(fmt.Errorf("解析检查点数据失败: %w", err))
 	}
 
 	// 检查是queries文件是否有新增的类别
 	for _, query := range querys {
-		if _, ok := checkpoints[query]; !ok {
-			checkpoints[query] = &Checkpoint{
+		if _, ok := checkpointsData[query]; !ok {
+			newCheckpoints[query] = &Checkpoint{
 				Query: query,
 			}
+		} else {
+			newCheckpoints[query] = checkpointsData[query]
 		}
 	}
 
-	m.checkpoints = checkpoints
+	m.checkpoints = newCheckpoints
 }
 
 // Save 方法将当前的检查点状态以易于阅读的JSON格式保存到文件中。
@@ -146,7 +173,7 @@ func (m *Manager) Save() error {
 // Update 方法用新的扫描进度信息原子性地更新内存中的检查点。
 // 它接收当前的查询、页面、仓库、文件、提交、总结果数和已处理数作为参数，
 // 并更新检查点的相应字段以及最后更新时间。
-func (m *Manager) Update(query string, page int, repo, file, commit string, totalResults, processed int) error {
+func (m *Manager) Update(query Query, page int, repo, file, commit string, totalResults, processed int) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	checkpoint := m.checkpoints[query]
@@ -164,7 +191,7 @@ func (m *Manager) Update(query string, page int, repo, file, commit string, tota
 // GetCheckpoint 方法返回当前检查点状态的一个安全副本。
 // 通过返回一个值的副本而非指针，可以防止外部代码无意中修改了真实的检查点状态，
 // 从而保证了管理器内部状态的完整性和线程安全。
-func (m *Manager) GetCheckpoint(query string) *Checkpoint {
+func (m *Manager) GetCheckpoint(query Query) *Checkpoint {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	// 返回一个检查点对象的副本，以避免外部修改。

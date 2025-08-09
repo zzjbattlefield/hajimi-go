@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/v74/github"
+	"github.com/zzjbattlefield/hajimi-go/internal/checkpoint"
 	"golang.org/x/oauth2"
 )
 
@@ -27,7 +28,7 @@ func NewClient(tokens []string) *Client {
 }
 
 // SearchCode 在 GitHub 上搜索代码，支持速率限制处理和文本匹配
-func (c *Client) SearchCode(ctx context.Context, query string, opts *github.SearchOptions) (*github.CodeSearchResult, *github.Response, error) {
+func (c *Client) SearchCode(ctx context.Context, query checkpoint.Query, opts *github.SearchOptions) (*github.CodeSearchResult, *github.Response, error) {
 	// 为上下文添加超时
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
@@ -42,7 +43,7 @@ func (c *Client) SearchCode(ctx context.Context, query string, opts *github.Sear
 		TextMatch: true,
 	}
 	// 手动构造请求以添加文本匹配媒体类型
-	result, resp, err := c.Client.Search.Code(ctx, query, opt)
+	result, resp, err := c.Client.Search.Code(ctx, string(query), opt)
 	// 执行请求
 	if err == nil {
 		return result, resp, nil
