@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"google.golang.org/genai"
 )
@@ -48,7 +49,25 @@ func (gv *GoogleValidator) validateAPIKey(ctx context.Context, apiKey string) (*
 		}
 
 	}
-	return NewValidationResult(true, GoogleAPIKey, apiKey, "API 密钥有效", ""), nil
+	validateResult := NewValidationResult(true, GoogleAPIKey, apiKey, "API 密钥有效", "")
+	// 付费key校验
+	payText := strings.Repeat("You are an expert at analyzing transcripts.", 150)
+	parts = []*genai.Part{
+		{Text: payText},
+	}
+	_, err = client.Caches.Create(ctx, "gemini-2.5-flash", &genai.CreateCachedContentConfig{
+		Contents: []*genai.Content{{Parts: parts, Role: genai.RoleUser}},
+		TTL:      300,
+	})
+	if err != nil {
+		if googleApierror, ok := err.(genai.APIError); ok {
+			code := strconv.Itoa(googleApierror.Code)
+			validateResult.Details = "检测到免费密钥，付费密钥失败code：" + code
+			return validateResult, nil
+		}
+	}
+	validateResult.Pay = true
+	return validateResult, nil
 }
 
 // SupportedTypes 返回支持的密钥类型

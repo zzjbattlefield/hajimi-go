@@ -22,19 +22,3 @@ func TestNewClient(t *testing.T) {
 		t.Errorf("Expected %d tokens, got %d", len(tokens), len(client.tokens))
 	}
 }
-
-func TestWithToken(t *testing.T) {
-	// Test setting a specific token
-	tokens := []string{"token1", "token2"}
-	client := NewClient(tokens)
-
-	newClient := client.WithToken("new_token")
-	if newClient == nil {
-		t.Error("Expected a new client, got nil")
-	}
-
-	// The new client should have the same tokens but use the new token
-	if len(newClient.tokens) != len(client.tokens) {
-		t.Errorf("Expected %d tokens, got %d", len(client.tokens), len(newClient.tokens))
-	}
-}

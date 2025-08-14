@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var testKey = "you gemini key"
+var testKey = "your_test_key_here"
 
 func TestGoogleValidator_SupportedTypes(t *testing.T) {
 	validator := NewGoogleValidator()

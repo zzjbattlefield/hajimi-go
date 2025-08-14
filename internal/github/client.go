@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/go-github/v74/github"
 	"github.com/zzjbattlefield/hajimi-go/internal/checkpoint"
-	"golang.org/x/oauth2"
 )
 
 // Client 封装了 GitHub 客户端
@@ -84,23 +83,6 @@ func (c *Client) SearchCode(ctx context.Context, query checkpoint.Query, opts *g
 
 	// 如果不是速率限制错误，则返回错误
 	return nil, resp, err
-}
-
-// WithToken 为客户端设置特定的令牌
-func (c *Client) WithToken(token string) *Client {
-	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: token},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-	// 为 HTTP 客户端设置超时
-	tc.Timeout = 30 * time.Second
-
-	return &Client{
-		Client:   github.NewClient(tc),
-		tokens:   c.tokens,
-		tokenIdx: c.tokenIdx,
-	}
 }
 
 // RotateToken 轮换到列表中的下一个令牌

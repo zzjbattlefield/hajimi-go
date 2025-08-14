@@ -7,7 +7,6 @@ toolchain go1.24.2
 require (
 	github.com/google/go-github/v74 v74.0.0
 	github.com/joho/godotenv v1.5.1
-	golang.org/x/oauth2 v0.23.0
 	google.golang.org/genai v1.18.0
 )
 

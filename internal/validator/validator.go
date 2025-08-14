@@ -27,6 +27,7 @@ type ValidationResult struct {
 	Value     string
 	Details   string
 	ErrorCode string
+	Pay       bool
 }
 
 // Validator 验证密钥的接口
@@ -43,6 +44,7 @@ func NewValidationResult(valid bool, secretType SecretType, value, details, erro
 		Value:     value,
 		Details:   details,
 		ErrorCode: errorCode,
+		Pay:       false,
 	}
 }
 

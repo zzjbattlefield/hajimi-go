@@ -139,7 +139,7 @@ func processCodeResults(ctx context.Context, codeResults []*github.CodeResult, s
 			if validationResult.Valid {
 				logger.Log.Infof("找到有效密钥 - 类型: %s, 值: %s, 文件: %s, 仓库: %s, 行: %d, 详情: %s",
 					secret.Type, secret.Value, secret.File, secret.Repo, secret.Line, validationResult.Details)
-				data.CacheData.Add(secret.Value)
+				data.CacheData.Add(validationResult)
 			} else {
 				logger.Log.Infof("找到无效密钥 - 类型: %s, 值: %s, 文件: %s, 仓库: %s, 行: %d, 错误: %s, 详情: %s",
 					secret.Type, secret.Value, secret.File, secret.Repo, secret.Line, validationResult.ErrorCode, validationResult.Details)

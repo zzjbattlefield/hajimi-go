@@ -18,7 +18,8 @@ type Config struct {
 	GithubTokens  []string
 	Proxy         string
 	DataPath      string
-	SaveFileName  string
+	FreeFileName  string
+	PayFileName   string
 	DateRangeDays int
 	QueriesFile   string
 	LOGFILEPATH   string
@@ -47,7 +48,8 @@ func Load() *Config {
 		GithubTokens:      getEnvAsSlice("GITHUB_TOKENS", []string{}),
 		Proxy:             getEnv("PROXY", ""),
 		LOGFILEPATH:       getEnv("LOGFILE_PATH", ""),
-		SaveFileName:      getEnv("SAVE_FILE_NAME", "valid_keys.txt"),
+		FreeFileName:      getEnv("FREE_FILE_NAME", "freekey.txt"),
+		PayFileName:       getEnv("PAY_FILE_NAME", "paidkey.txt"),
 		DataPath:          getEnv("DATA_PATH", getDefaultDataPath()),
 		DateRangeDays:     getEnvAsInt("DATE_RANGE_DAYS", 730),
 		QueriesFile:       getEnv("QUERIES_FILE", "queries.txt"),
